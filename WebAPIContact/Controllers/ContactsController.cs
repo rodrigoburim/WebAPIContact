@@ -12,7 +12,7 @@ namespace WebAPIContact.Controllers
     {
         //TODO: use dependecy injection
         // http://www.asp.net/web-api/overview/extensibility/using-the-web-api-dependency-resolver
-        static readonly IContactRepository repository = new ContactRepository();
+        private readonly IEntityRepository<Contact> repository = new EntityRepository<Contact>(new WebAPIContactContext());
 
         public IEnumerable<Contact> GetAllContacts()
         {
@@ -34,7 +34,7 @@ namespace WebAPIContact.Controllers
         {
             //TODO: validate item
             // http://www.asp.net/web-api/overview/formats-and-model-binding/model-validation-in-aspnet-web-api
-            item = repository.Add(item);
+            repository.Create(item);
             var response = Request.CreateResponse<Contact>(HttpStatusCode.Created, item);
 
             string uri = Url.Link("DefaultApi", new { id = item.Id });
@@ -46,10 +46,7 @@ namespace WebAPIContact.Controllers
         public void UpdateContact(int id, Contact item)
         {
             item.Id = id;
-            if(!repository.Update(item))
-            {
-                throw new HttpResponseException(HttpStatusCode.NotFound);
-            }
+            repository.Update(item);
         }
 
         [HttpDelete]
@@ -61,7 +58,13 @@ namespace WebAPIContact.Controllers
                 throw new HttpResponseException(HttpStatusCode.NotFound);
             }
 
-            repository.Remove(id);
+            repository.Delete(id);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            repository.Dispose();
+            base.Dispose(disposing);
         }
     }
 }
